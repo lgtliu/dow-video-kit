@@ -34,7 +34,7 @@ python_web/
 └── static/           # 无构建步骤的原生前端（index.html / app.js / style.css）
 ```
 
-确定性组装逻辑（脚本、分镜、提示词、字幕、合规、自查）全部在 Python 端实现，作为唯一事实来源；前端只负责展示与交互。
+确定性组装逻辑（脚本、分镜、提示词、字幕、合规、自查）全部在 Python 端实现，作为唯一事实来源；前端只负责展示与交互。提示词模板在 dow-english-kit 基准上融合了 [awesome-seedance](https://github.com/LearnPrompt/awesome-seedance)（LearnPrompt）的「UGC 口播测评带货」「电影级产品广告分镜」模板技巧：产品锁独立成段（结构件拆解 + 标签避特写）、`realistic hands` 显式收尾词、末镜收尾两拍（产品单独入画 → 对镜确认）、正向 Style Keywords 尾块。
 
 ## 说明
 

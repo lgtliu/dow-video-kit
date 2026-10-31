@@ -4,6 +4,9 @@
 移植自 miniprogram/utils/generator.js，模板基准：
 references/dow-english-kit.md + references/output-templates.md
 深度规则：references/dow-playbook.md
+提示词模板参考：awesome-seedance（github.com/LearnPrompt/awesome-seedance）
+「UGC 口播测评带货」与「电影级产品广告分镜」模板（产品锁独立成段、
+realistic hands、收尾两拍、Style Keywords 尾块、标签避特写）。
 """
 
 import math
@@ -29,6 +32,15 @@ COMPLIANCE_NEGATIVES = '\n'.join([
     'NO misleading guarantees.',
     'NO invented sales numbers, NO invented reviews.',
     'NO national flags, NO emblems, NO fake certification marks, NO misleading badges.',
+])
+
+# awesome-seedance 模板：正向需求收尾（关键词堆在提示语最末尾）
+STYLE_KEYWORDS_TAIL = '\n'.join([
+    '[Style Keywords]',
+    'vertical 9:16, handheld iPhone UGC video, realistic hands, natural skin texture,',
+    'mixed warm-and-cool household lighting, lived-in cluttered set, documentary realism,',
+    'one product, one creator, one simple action per beat,',
+    'no logos, no watermarks, no on-screen text — captions added in post.',
 ])
 
 DEFAULT_PERSONA = {
@@ -436,7 +448,15 @@ def build_shot_prompt(inp, plan, idx, override=None):
 
     parts.append('[Action Lock]')
     parts.append(inp.get('actionLock') or DEFAULT_ACTION_LOCK)
-    parts.append('No multi-fingers, no unnatural hand anatomy.\n')
+    parts.append('Realistic hands. One simple action per beat — no multi-step')
+    parts.append('manipulation inside a single shot.\n')
+
+    parts.append('[Product Lock]')
+    parts.append(product_desc_line(inp))
+    parts.append('Break the product into visible structural parts — shape, color, material,')
+    parts.append('proportions — and keep every part identical across all ' + str(n) + ' shots.')
+    parts.append('Never end a shot on a macro close-up of printed labels; keep brand text,')
+    parts.append('tags and packaging print out of frame.\n')
 
     parts.append('[Setting Lock]')
     parts.append(st['lock'])
@@ -448,11 +468,15 @@ def build_shot_prompt(inp, plan, idx, override=None):
     parts.append(st['light'] + '\n')
     parts.append(CLUTTER + '\n')
     parts.append(SKIN_PATCH + '\n')
-    parts.append(product_desc_line(inp) + '\n')
 
     parts.append('Action and dialogue (' + sec(seg['start']) + '–' + sec(seg['end']) + 's): ' + who + ' ' + action + '.')
     parts.append(who + ' says: "' + line + '"')
-    parts.append('Camera: ' + cam + '.\n')
+    parts.append('Camera: ' + cam + '.')
+    if idx == n - 1:
+        parts.append('Closing beats: the ' + short + ' held alone in frame for a moment, then '
+                     + who + ' looks into the camera still holding it. No on-screen text —')
+        parts.append('captions are added in post.')
+    parts.append('')
 
     parts.append('[Quality directives]')
     parts.append(persona['name'] + "'s face features stay identical across all " + str(n) + ' shots — same face, same')
@@ -465,6 +489,7 @@ def build_shot_prompt(inp, plan, idx, override=None):
     parts.append(COMPLIANCE_NEGATIVES + '\n')
 
     parts.append(negatives(short))
+    parts.append(STYLE_KEYWORDS_TAIL)
     return '\n'.join(parts)
 
 
@@ -517,9 +542,11 @@ def action_issues(actions):
 
 def build_self_check(ctx):
     lst = []
-    lst.append({'label': '三段锁定置顶（角色 / 动作 / 场景）', 'pass': True, 'note': '每个镜头块开头即写'})
+    lst.append({'label': '四段锁定置顶（角色 / 动作 / 产品 / 场景）', 'pass': True, 'note': '每个镜头块开头即写，产品锁独立成段'})
     lst.append({'label': '四大支柱全在（混合光源 / 生活杂物 / 毛孔纹理 / 手机拍摄）', 'pass': True, 'note': '已写入每个镜头块'})
     lst.append({'label': '六条补丁全加（塑料皮肤 / 崩手 / 眼神 / 口型 / 崩脸 / 乱码与假光照）', 'pass': True, 'note': '已写入每个镜头块'})
+    lst.append({'label': 'UGC 收尾规范（末镜收尾两拍 + realistic hands / 无上屏文字）', 'pass': True,
+                'note': '参考 awesome-seedance「UGC 口播测评带货」模板'})
     lst.append({'label': '时长 15–25s、四段式（钩子→种草→信任→转化）',
                 'pass': 15 <= ctx['duration'] <= 25,
                 'note': str(ctx['duration']) + 's · ' + str(ctx['n']) + ' 镜头'})
